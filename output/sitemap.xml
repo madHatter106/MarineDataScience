@@ -15,11 +15,27 @@
  </url>
  <url>
   <loc>https://madhatter106.github.io/MarineDataScience/archive.html</loc>
-  <lastmod>2017-07-19T16:49:00Z</lastmod>
+  <lastmod>2017-07-19T16:57:00Z</lastmod>
  </url>
  <url>
   <loc>https://madhatter106.github.io/MarineDataScience/categories/</loc>
-  <lastmod>2017-07-19T16:49:00Z</lastmod>
+  <lastmod>2017-07-19T16:57:00Z</lastmod>
+ </url>
+ <url>
+  <loc>https://madhatter106.github.io/MarineDataScience/categories/jupyter-notebook/</loc>
+  <lastmod>2017-07-19T16:57:00Z</lastmod>
+ </url>
+ <url>
+  <loc>https://madhatter106.github.io/MarineDataScience/categories/jupyter/</loc>
+  <lastmod>2017-07-19T16:57:00Z</lastmod>
+ </url>
+ <url>
+  <loc>https://madhatter106.github.io/MarineDataScience/categories/ocean-color/</loc>
+  <lastmod>2017-07-19T16:57:00Z</lastmod>
+ </url>
+ <url>
+  <loc>https://madhatter106.github.io/MarineDataScience/categories/xarray/</loc>
+  <lastmod>2017-07-19T16:57:00Z</lastmod>
  </url>
  <url>
   <loc>https://madhatter106.github.io/MarineDataScience/galleries/</loc>
@@ -32,5 +48,13 @@
  <url>
   <loc>https://madhatter106.github.io/MarineDataScience/posts/clustering-optical-water-types/</loc>
   <lastmod>2017-07-19T16:49:00Z</lastmod>
+ </url>
+ <url>
+  <loc>https://madhatter106.github.io/MarineDataScience/posts/xarray-geoviews-a-new-perspective-on-oceanographic-data-part-i/</loc>
+  <lastmod>2017-07-19T16:57:00Z</lastmod>
+ </url>
+ <url>
+  <loc>https://madhatter106.github.io/MarineDataScience/posts/xarray-geoviews-a-new-perspective-on-oceanographic-data-part-ii/</loc>
+  <lastmod>2017-07-19T16:57:00Z</lastmod>
  </url>
 </urlset>

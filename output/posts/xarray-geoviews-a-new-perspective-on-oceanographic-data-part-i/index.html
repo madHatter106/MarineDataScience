@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html prefix="og: http://ogp.me/ns# article: http://ogp.me/ns/article# " lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XARRAY &amp; GEOVIEWS A new perspective on oceanographic data - part I | Marine Data Science</title>
+<link href="../../assets/css/all-nocdn.css" rel="stylesheet" type="text/css">
+<link href="../../assets/css/ipython.min.css" rel="stylesheet" type="text/css">
+<link href="../../assets/css/nikola_ipython.css" rel="stylesheet" type="text/css">
+<meta name="theme-color" content="#5670d4">
+<meta name="generator" content="Nikola (getnikola.com)">
+<link rel="alternate" type="application/rss+xml" title="RSS" href="../../rss.xml">
+<link rel="canonical" href="https://madhatter106.github.io/MarineDataScience/posts/xarray-geoviews-a-new-perspective-on-oceanographic-data-part-i/">
+<!--[if lt IE 9]><script src="../../assets/js/html5.js"></script><![endif]--><meta name="author" content="Erdem Karaköylü">
+<link rel="next" href="../xarray-geoviews-a-new-perspective-on-oceanographic-data-part-ii/" title="XARRAY &amp; GEOVIEWS A new perspective on oceanographic data - part II" type="text/html">
+<meta property="og:site_name" content="Marine Data Science">
+<meta property="og:title" content="XARRAY &amp; GEOVIEWS A new perspective on oceanographic data - part I">
+<meta property="og:url" content="https://madhatter106.github.io/MarineDataScience/posts/xarray-geoviews-a-new-perspective-on-oceanographic-data-part-i/">
+<meta property="og:description" content="With this post I explore an alternative to ol' numpy; xarray. Numpy is still running under the hood but this very handy library applies the pandas concept of labeled dimension to large N-dimension arr">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2017-02-20T11:16:55-05:00">
+<meta property="article:tag" content="Jupyter notebook">
+<meta property="article:tag" content="ocean color">
+<meta property="article:tag" content="xarray">
+</head>
+<body>
+<a href="#content" class="sr-only sr-only-focusable">Skip to main content</a>
+
+<!-- Menubar -->
+
+<nav class="navbar navbar-inverse navbar-static-top"><div class="container">
+<!-- This keeps the margins nice -->
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-navbar" aria-controls="bs-navbar" aria-expanded="false">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="https://madhatter106.github.io/MarineDataScience/">
+
+                <span id="blog-title">Marine Data Science</span>
+            </a>
+        </div>
+<!-- /.navbar-header -->
+        <div class="collapse navbar-collapse" id="bs-navbar" aria-expanded="false">
+            <ul class="nav navbar-nav">
+<li>
+<a href="../../archive.html">Archive</a>
+                </li>
+<li>
+<a href="../../categories/">Tags</a>
+                </li>
+<li>
+<a href="../../rss.xml">RSS feed</a>
+
+                
+            </li>
+</ul>
+<ul class="nav navbar-nav navbar-right">
+<li>
+    <a href="index.ipynb" id="sourcelink">Source</a>
+    </li>
+
+                
+            </ul>
+</div>
+<!-- /.navbar-collapse -->
+    </div>
+<!-- /.container -->
+</nav><!-- End of Menubar --><div class="container" id="content" role="main">
+    <div class="body-content">
+        <!--Body content-->
+        <div class="row">
+            
+            
+<article class="post-text h-entry hentry postpage" itemscope="itemscope" itemtype="http://schema.org/Article"><header><h1 class="p-name entry-title" itemprop="headline name"><a href="." class="u-url">XARRAY &amp; GEOVIEWS A new perspective on oceanographic data - part I</a></h1>
+
+        <div class="metadata">
+            <p class="byline author vcard"><span class="byline-name fn" itemprop="author">
+                    Erdem Karaköylü
+            </span></p>
+            <p class="dateline"><a href="." rel="bookmark"><time class="published dt-published" datetime="2017-02-20T11:16:55-05:00" itemprop="datePublished" title="2017-02-20 11:16">2017-02-20 11:16</time></a></p>
+                <p class="commentline">
+        
+</p>
+<div class="g-commentcount" data-href="/posts/xarray-geoviews-a-new-perspective-on-oceanographic-data-part-i/"></div>
+<script src="https://apis.google.com/js/plusone.js"></script><p class="sourceline"><a href="index.ipynb" class="sourcelink">Source</a></p>
+
+        </div>
+        
+
+    </header><div class="e-content entry-content" itemprop="articleBody text">
+    <div tabindex="-1" id="notebook" class="border-box-sizing">
+    <div class="container" id="notebook-container">
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>With this post I explore an alternative to ol' numpy; <a href="http://xarray.pydata.org/en/stable/index.html">xarray</a>. Numpy is still running under the hood but this very handy library applies the <a href="http://pandas.pydata.org/">pandas</a> concept of labeled dimension to large N-dimension arrays prevalent in scientific computing. The result is an ease of manipulation of dimensions without having to guess or remember what they correspond to. Moreover, xarray plays nicely with two other relatively new libraries:</p>
+<ul>
+<li>
+<a href="http://dask.pydata.org/en/latest/">dask</a>, which enables out of core computation so that memory availability becomes much less an issue with large data sets; </li>
+<li>
+<a href="http://geo.holoviews.org/">GeoViews</a>, a library sitting on top of <a href="http://holoviews.org/">HoloViews</a>. The latter eases the burden of data visualization by offering an unusual approach that does away with step-by-step graphical coding and allows the user to concentrate how the data organization instead. This results in a substantial reduction code written, which makes data analysis much cleaner and less bug-prone. GeoViews sits on top of the visualization package HoloViews, with an emphasis on geophysical data. It's also my first good-bye to the aging (10+ years) matplotlib library. It'll still be handy now and then, but it's time to try new things. <!-- TEASER_END -->
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [1]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">seaborn</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="k">import</span> <span class="n">rcParams</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">pl</span>
+<span class="o">%</span><span class="k">matplotlib</span> inline
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [2]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">rcParams</span><span class="p">[</span><span class="s1">'font.size'</span><span class="p">]</span><span class="o">=</span><span class="mi">16</span>
+<span class="n">rcParams</span><span class="p">[</span><span class="s1">'xtick.labelsize'</span><span class="p">]</span><span class="o">=</span><span class="mi">14</span>
+<span class="n">rcParams</span><span class="p">[</span><span class="s1">'ytick.labelsize'</span><span class="p">]</span><span class="o">=</span><span class="mi">14</span>
+<span class="n">rcParams</span><span class="p">[</span><span class="s1">'legend.fontsize'</span><span class="p">]</span><span class="o">=</span><span class="mi">14</span>
+<span class="n">rcParams</span><span class="p">[</span><span class="s1">'axes.formatter.limits'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Set up the paths for loading and saving...</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [3]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">dataDir</span> <span class="o">=</span> <span class="s1">'/accounts/ekarakoy/disk02/UNCERTAINTIES/Monte-Carlo/DATA/AncillaryMC/'</span>
+<span class="n">expDir</span> <span class="o">=</span> <span class="s1">'Lt'</span>
+<span class="n">fname</span> <span class="o">=</span> <span class="s1">'S20031932003196.L3m_4D_SU50.nc'</span>
+<span class="n">fpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dataDir</span><span class="p">,</span><span class="n">expDir</span><span class="p">,</span><span class="n">fname</span><span class="p">)</span>
+<span class="n">foutpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dataDir</span><span class="p">,</span><span class="n">expDir</span><span class="p">,</span><span class="n">fname</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'.nc'</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">'_xarray.nc'</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>..., which I now used to access the nc data:</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [4]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">fpath</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Now let's peak inside the dataset we've just loaded:</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [5]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">ds</span><span class="o">.</span><span class="n">data_vars</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[5]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>KeysView(Data variables:
+    Rrs_unc_412  (lat, lon) float64 nan nan nan nan nan nan nan nan nan nan ...
+    Rrs_unc_443  (lat, lon) float64 nan nan nan nan nan nan nan nan nan nan ...
+    Rrs_unc_490  (lat, lon) float64 nan nan nan nan nan nan nan nan nan nan ...
+    Rrs_unc_510  (lat, lon) float64 nan nan nan nan nan nan nan nan nan nan ...
+    Rrs_unc_555  (lat, lon) float64 nan nan nan nan nan nan nan nan nan nan ...
+    Rrs_unc_670  (lat, lon) float64 nan nan nan nan nan nan nan nan nan nan ...
+    palette      (rgb, eightbitcolor) uint8 147 0 108 144 0 111 141 0 114 ...)</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Here Rrs refers to Remote sensing reflectance (units of per steradian or $sr^{-1}$). The number at the end of the label string refers to the corresponding wavelength, in nanometers.</p>
+<p>I don't need "palette". I am interested in the uncertainty data, however. These are 64 bits float with lat lon dimensions. Let's make sure these arrays are inter-comparable.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [6]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">bands</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'412'</span><span class="p">,</span><span class="s1">'443'</span><span class="p">,</span><span class="s1">'490'</span><span class="p">,</span><span class="s1">'510'</span><span class="p">,</span><span class="s1">'555'</span><span class="p">,</span><span class="s1">'670'</span><span class="p">]</span>
+<span class="k">for</span> <span class="n">band</span> <span class="ow">in</span> <span class="n">bands</span><span class="p">:</span>
+    <span class="n">var</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">data_vars</span><span class="p">[</span><span class="s1">'Rrs_unc_</span><span class="si">%s</span><span class="s1">'</span> <span class="o">%</span> <span class="n">band</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"="</span> <span class="o">*</span> <span class="mi">80</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>&lt;xarray.DataArray 'Rrs_unc_412' (lat: 1556, lon: 4318)&gt;
+[6718808 values with dtype=float64]
+Coordinates:
+  * lat      (lat) float64 81.17 81.08 81.0 80.92 80.83 80.75 80.67 80.58 ...
+  * lon      (lon) float64 -179.9 -179.8 -179.7 -179.7 -179.6 -179.5 -179.4 ...
+Attributes:
+    long_name: Uncertainty in remote sensing reflectance at 412 nm
+    units: sr^-1
+    valid_min: -30000
+    valid_max: 25000
+    display_scale: linear
+    display_min: 0.0
+    display_max: 0.01
+================================================================================
+&lt;xarray.DataArray 'Rrs_unc_443' (lat: 1556, lon: 4318)&gt;
+[6718808 values with dtype=float64]
+Coordinates:
+  * lat      (lat) float64 81.17 81.08 81.0 80.92 80.83 80.75 80.67 80.58 ...
+  * lon      (lon) float64 -179.9 -179.8 -179.7 -179.7 -179.6 -179.5 -179.4 ...
+Attributes:
+    long_name: Uncertainty in remote sensing reflectance at 443 nm
+    units: sr^-1
+    valid_min: -30000
+    valid_max: 25000
+    display_scale: linear
+    display_min: 0.0
+    display_max: 0.01
+================================================================================
+&lt;xarray.DataArray 'Rrs_unc_490' (lat: 1556, lon: 4318)&gt;
+[6718808 values with dtype=float64]
+Coordinates:
+  * lat      (lat) float64 81.17 81.08 81.0 80.92 80.83 80.75 80.67 80.58 ...
+  * lon      (lon) float64 -179.9 -179.8 -179.7 -179.7 -179.6 -179.5 -179.4 ...
+Attributes:
+    long_name: Uncertainty in remote sensing reflectance at 490 nm
+    units: sr^-1
+    valid_min: -30000
+    valid_max: 25000
+    display_scale: linear
+    display_min: 0.0
+    display_max: 0.01
+================================================================================
+&lt;xarray.DataArray 'Rrs_unc_510' (lat: 1556, lon: 4318)&gt;
+[6718808 values with dtype=float64]
+Coordinates:
+  * lat      (lat) float64 81.17 81.08 81.0 80.92 80.83 80.75 80.67 80.58 ...
+  * lon      (lon) float64 -179.9 -179.8 -179.7 -179.7 -179.6 -179.5 -179.4 ...
+Attributes:
+    long_name: Uncertainty in remote sensing reflectance at 510 nm
+    units: sr^-1
+    valid_min: -30000
+    valid_max: 25000
+    display_scale: linear
+    display_min: 0.0
+    display_max: 0.01
+================================================================================
+&lt;xarray.DataArray 'Rrs_unc_555' (lat: 1556, lon: 4318)&gt;
+[6718808 values with dtype=float64]
+Coordinates:
+  * lat      (lat) float64 81.17 81.08 81.0 80.92 80.83 80.75 80.67 80.58 ...
+  * lon      (lon) float64 -179.9 -179.8 -179.7 -179.7 -179.6 -179.5 -179.4 ...
+Attributes:
+    long_name: Uncertainty in remote sensing reflectance at 555 nm
+    units: sr^-1
+    valid_min: -30000
+    valid_max: 25000
+    display_scale: linear
+    display_min: 0.0
+    display_max: 0.01
+================================================================================
+&lt;xarray.DataArray 'Rrs_unc_670' (lat: 1556, lon: 4318)&gt;
+[6718808 values with dtype=float64]
+Coordinates:
+  * lat      (lat) float64 81.17 81.08 81.0 80.92 80.83 80.75 80.67 80.58 ...
+  * lon      (lon) float64 -179.9 -179.8 -179.7 -179.7 -179.6 -179.5 -179.4 ...
+Attributes:
+    long_name: Uncertainty in remote sensing reflectance at 670 nm
+    units: sr^-1
+    valid_min: -30000
+    valid_max: 25000
+    display_scale: linear
+    display_min: 0.0
+    display_max: 0.01
+================================================================================
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>So there are multiple arrays, one for each of 6 bands.
+Now I want to reorganize the data into a single array with a third dimension; band.
+This is as easy as 1, 2, 3... lines of code</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [7]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">rrsUnc</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">ds</span><span class="o">.</span><span class="n">data_vars</span><span class="p">[</span><span class="s1">'Rrs_unc_</span><span class="si">%s</span><span class="s1">'</span> <span class="o">%</span> <span class="n">band</span><span class="p">]</span> <span class="k">for</span> <span class="n">band</span> <span class="ow">in</span> <span class="n">bands</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="s1">'bands'</span><span class="p">)</span>
+<span class="n">rrsUnc</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s1">'bands'</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'412'</span><span class="p">,</span> <span class="s1">'443'</span><span class="p">,</span> <span class="s1">'490'</span><span class="p">,</span> <span class="s1">'510'</span><span class="p">,</span> <span class="s1">'555'</span><span class="p">,</span> <span class="s1">'670'</span><span class="p">]</span>
+<span class="n">rrsUnc</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">'rrs_uncertainty'</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Now I can close the netcdf dataset handle. Note that the __enter__() and __exit__() methods being implemented, sticking the code above inside a "with" context would be the proper way to go about this; it'll also be how I'll do things next time.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [8]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">ds</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>So what is rrs?...</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [9]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="nb">type</span><span class="p">(</span><span class="n">rrsUnc</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[9]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>xarray.core.dataarray.DataArray</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>... and what are the dimensions of rrs data ?...</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [10]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">rrsUnc</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>('bands', 'lat', 'lon')
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>... and for indexing purposes, what type are they?</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [11]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">rrsUnc</span><span class="o">.</span><span class="n">coords</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Coordinates:
+  * lat      (lat) float64 81.17 81.08 81.0 80.92 80.83 80.75 80.67 80.58 ...
+  * lon      (lon) float64 -179.9 -179.8 -179.7 -179.7 -179.6 -179.5 -179.4 ...
+  * bands    (bands) &lt;U3 '412' '443' '490' '510' '555' '670'
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h5 id="Basic-data-manipulation-and-plotting">Basic data manipulation and plotting<a class="anchor-link" href="#Basic-data-manipulation-and-plotting">¶</a>
+</h5>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Accessing the data along a given dimension...</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [12]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">rrsUnc412</span> <span class="o">=</span> <span class="n">rrsUnc</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">bands</span><span class="o">=</span><span class="p">[</span><span class="s1">'412'</span><span class="p">])</span>
+<span class="n">rrsUncGreen</span> <span class="o">=</span> <span class="n">rrsUnc</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">bands</span><span class="o">=</span><span class="p">[</span><span class="s1">'510'</span><span class="p">,</span><span class="s1">'555'</span><span class="p">])</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>... and quickly plotting it via its matplotlib interface is pretty straightforward:</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [13]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">pl</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span><span class="mi">7</span><span class="p">))</span>
+<span class="n">rrsUnc412</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">bins</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mf">5e-4</span><span class="p">),</span> <span class="n">histtype</span><span class="o">=</span><span class="s1">'stepfilled'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'uncertainty at 412nm'</span><span class="p">,</span>
+                <span class="n">normed</span><span class="o">=</span><span class="kc">True</span><span class="p">);</span>
+<span class="n">rrsUncGreen</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">bins</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mf">5e-4</span><span class="p">),</span><span class="n">histtype</span><span class="o">=</span><span class="s1">'stepfilled'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+                  <span class="n">label</span><span class="o">=</span><span class="s1">'uncertainty at all greenish bands: 510 &amp; 555'</span><span class="p">,</span> <span class="n">normed</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">pl</span><span class="o">.</span><span class="n">legend</span><span class="p">();</span>
+<span class="n">pl</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Histogram of Rrs Uncertainty'</span><span class="p">,</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">);</span>
+<span class="n">pl</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'freq'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+<span class="n">pl</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">'$sr^{-1}$'</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span> <span class="p">);</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+
+
+<div class="output_png output_subarea ">
+<img src="data:image/png;base64,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%0Avn1rVq5cydKlS7njjlv5wx+OpH371lx00bl88cXsvON999239OnTiyOPbM9hhx3CDTf0z7ufhdu+%0AQ4eDCrT9jTcO4JprrgTgxx//R9++V9C5czs6dDiYbt3+xMcff1Qg9v/852W6dDmWww47hOuuu4Zl%0Ay5YVe53Lly/j+uv70aHDwZx00jGMHz8ub9/XX3/FlVdeSufO7ejUqQ19+vTihx9+yNu/tvcBwOjR%0AT3PiiUfTseMh3HrrTaxatTJv39qu49tvv6Ft2wP5738/LTLmBQvmU7dudrHX9NNP8xg06K906NBp%0AjX2vvvoKS5Ys4ZxzzqdOnTrssMOOnHDCyTz99JPFHm/+/PlUr16D5s1bULNmLTbbbDNgdbHlFyxY%0AQN26ddexv/j417U/LSbZUiXz/g/TS/VHUsktWbKYCRP+zd13j2TMmDFMn/4B48aNAeCll6bw4IP3%0Ac+ONtzBu3ES23Xa7vMTrpZemcO+9d9G3b38mTHiJ7t170rfvFXz22X/zjv3CC+O57LI+3HHH37jt%0AtiE0brwVPXr0YujQewDo168Pu+yyG2PHvsCDDz5KjDMYNWpksbE+/PAorrqqH6NHP092djbDh98N%0AwKhRyVfaw4eP4qKLLqFNm3YFErdFixbxxhuvc9hhh69xzHfffYehQ2/nz3/+CxMmvMTFF/filltu%0AZPbsz9httz3o3fsa6tevz6RJr7LPPvuvUf+RR0bx9ttv8cAD/+Tf/55Ey5Z7c+21fUrZCjB16qs8%0A8MBw/vKX23jiiTF8883XvP/+uwXKzJjxIbvssivjx79IVlYWf//7UGbMmM5ddw1n7NiJ7Lnn77nk%0AkgtZsWIFq1evpk+fXmy22eY89tizPProM8ybN5ebb74h73j5237UqMcKtH1+9977d5YsWcLjjz/L%0AuHET2WuvfbjllvzHWcJbb73OyJGPMGzYfbz44mSmTJlU7LWOHz+Ogw9uw9ixL9C162nceOMAvvzy%0ACyAZC163bjZPPfVvnnhiND///DPDht1RoH5x74PZsz/nlltupFu3Howd+wK77bYHL700pUTX0bjx%0AVkya9Crbb79DkTHPnz+fd999m9NP70KnTm3o3v08Zs785f+bQw9tx047/bbIujHOZIcddiwwVCOE%0A5nz66ScsXbq0yDpJUg3vvfcOd9xxK19//TXt26+ZwP8S30+sXLmCK664hCOOaEfXrn9gxIgRrF69%0AOm//7Nmfce65p9Op06H86U+n83//91qB63vxxUmcfPLxHHFEO6644pK8NkmTSbYkaZOxatUqunT5%0AI9nZ2TRvZ/mJAAAgAElEQVRt2pSdd96Fzz9PEuVx456lXbuO/O53zalevTrnnHM+Z5zxJ1asWMHo%0A0U9xxBFH0aLFrmRlZdGq1UHsu+/+PPfc2LxjN2/egl133b3YcacjRjzMn/50AVlZWTRqtBl7770v%0AMc4oNtb27Q9jm222pXbt2hxwQKu8OAs7/PAjmTr1P8yfPx+A1157hZycHHbddfc1yu6++x6MGfMC%0Av/tdc6pUqULr1gdTq1ZtYpxZovt36qlncu+9D9CgQQOqVatGu3YdmTPn+wK9ryXx4ouT2Wef/WjZ%0Aci9q1apFt26XsGLF8gJlqlSpwvHHn0RWVharVq1i7NhnOf30s9liiy2pWbMm55xzPosWLeKtt95g%0A5szpzJr1Cd269aBOnTo0aNCAc8/txpQpE/N6s/O3fePGWxVo+/wWLlxAtWrVqFGjJtWrV+fss8/j%0A3nsfzNu/bNkyzj77fGrXrs1OO/2WHXfcic8+K7pHGCCEFhxySBtq1KjBMcf8gYYNG+UlfLfccju9%0Ae19NjRo1qFu3Lq1aHVQgmYXi3wcvvTSZHXbYkTZt2lO9enU6derMNttsV+LrWJstt2xMkyZNGTx4%0AKP/612hatNiFSy/txty5c9dZ96effiI7u16BbfXq1WPVqlUsWLCgyDpfffUlDRs25IorLqFZs234%0A61/vJisri6VLlxRZvmbNWjRrti1du57Os8+Op2fPKxk2bBjPPvsUAI0abcaWWzamf/8befrp5zjs%0AsCO48spL83rumzVrxrbbbs8994zgkUf+RXZ2PXr27F7sh4D15ZhsSdImpUmTJnm/16pVK+8/1q++%0A+pLdd2+Zt69+/Qa0a9chb9/rr0/lySd/mRi1atWqAl9ZN2681VrP++abr/PAA8OZPftzVq5cwcqV%0AK9lttz1KHWdhe+zRks02y2Hy5Bc45pjjmTJlEh07rtmLDbBy5UpGjryPyZNfYN68JGFatmwZy5cv%0AL7J8YXPn/siddw7inXfe4ueff87bvnx58cMlivLDD9+z1Va/XF+dOnVo0mTrAmW22GJLqlatmnfe%0ARYt+5pprrizwIWblypV8//13LFgwn1WrVnHUUR3XONf333+f93tJ7ukf/3g6vXv34vjjO7Pffgdw%0A0EGHctBBh+SdNzu7XoF2r1mz5lqHi2y//fZ5v1epUoUtttiSH36YA8DMmTO5555hfPLJRyxfvpyV%0AK1eSk7NFgfrFxTxnzvdsuWXjAmW32WbbvLZY13WszdVXDyjw+vzzuzN+/L958cVJHHvsH9ZZv7Dc%0AHuaiTj1t2ptcd93VnHRSVx566EH22OP3VKtWjYkTn2f8+HHccsua46rbtm1P27bt817vs89+dOnS%0AhXHjRnPMMcdzwQXdC5Q/8cSTmTDh34wfP44LLujO4MFDC+y//PI+HH54W955Zxr77XdAqa+vOCbZ%0AkqSN1qpVq9bYVqVK0V/iVqlShdWr1ywPSSJ17rkXcuqpZxZ7rvwrFRT2+eefce21vbnggos57rgT%0AqFWrFkOGDOKjj2KxdYqLs6i4O3U6gueff45OnY5g6tRXOf/8i4osO2LEvbzwwngGDhxECDtTtWpV%0AOnVqU6LzAPTv35esrCzuu+8fNG7cmI8//oizzupa4vq5Vq9evcbKD1WrFszA8t/PmjVrATB06L3s%0AssuaE0lffnkKNWrUZNKk/6yxLycnmxiT3t+S3NPmzVvw+OPP8vrrr/Gf/7zCjTf2Z5999stbFq8E%0AOWoBa55zNTVq1GD+/PlcccUlHHXUMQwcOJjs7Gwee+wRHnvs4XXUTyxbtuYHo2XLluYl0eu6jtLI%0Ayspiiy225H//W/c3Fg0aNFjjG4L58+eTlZW1Rg83wB133EqPHpfRrl1Hateuw8CB1/O3v93HCy88%0AR5s27UocY9OmTfM+vBRlq62aFLu/Tp3fUK9e/bXWXx8OF5EkbRRyl/PK3zv51Vdflrh+06ZbF5jo%0AuGDBAh5+eBSLFi2iadNmBSacQbKEWVFJfFE++mgmWVnVOPnkP1KrVpIwlnSIRkl06tSZ999/l3Hj%0AxrD99juw9dbNiiw3Y8aHtGp1EDvvvAtVq1blq6++ZOHCor/CL67+0UcfR+PGSQ/q2oa7rE2jRpvx%0A7bff5r1evHgxX35ZfFvVrVuXBg0aMGvWxwW2f/PN1wA0bdqMZcuWFpgIuWTJEubO/bHUsS1YsICq%0AVavSuvUh9O59NQMHDmbKlEn89NO8Uh8LKPCeWr16Nd999x05OVswe/ZnLFr0M6eccjrZ2ckkvNLc%0Az80335zvvvuuwLb844rX9zpWrFjBHXfcVmC+wYoVK/j66y9p0qTpOuNq3rwFs2Z9XODbkRkzPuS3%0Avw1rLLkHSRtut10yNvz440+kcePG9OlzGbNmfUL79ocVeY4JE/7N6NFPF9j26aef5sV3331/5913%0A3y6w//PP/0uTJk2ZN28et932lwJDX+bNm8e8eXNLdH2lYZItSdooNGjQkLp16zJ58kRWrlzJtGlv%0A8t5775S4fufORzN58kTee+8dli9fzoMP3s+4cc9Sp04djjvuBKZMmcjLL09hxYoVvP/+u5x1Vlem%0ATXuz2OPVrFkzk8QupEmTrVm+fBkxzuDnnxcyYsS9LF68mB9//B8rV64s9hjFHRfgiy9m561O0rTp%0A1uy66+7cfffQIic85mrSpCmffPIxixcvZvbszxk69A5ycrZgzpzv8469aNEi5sz5niVL1hwP26RJ%0AU6ZP/5AVK1bw1ltv8OKLyYS/3Poltd9+B/J///cqH3zwPkuXLuGuu4bkXVdxjj32BB588H4+/fQT%0AVqxYwTPPPMmZZ57CggUL2GGHHdljj5bceedtzJ07l0WLfub222/hmmt6lyougPPPP5P77ksmDa5Y%0AsYIZM6ZTv379InthS+LDD99n6tRXWbFiBWPGPMP8+T/RqtVBNG68FVWrVuWDD95lyZIlPPPMk8ye%0A/TkLFswvdixyfvvv34pZsz7mpZemsHz5csaMeYavv/76V19HtWrV+OKL2QwaNJAffviBRYsWMWzY%0AnVSrVo1DDmm7zrgOOKAV9eo1YPjwu1m8eDEff/wRTzzxT044oUuR5XffvSUjRtzD3Lk/smLFCvbf%0A/0Bef/01tttue5YvX1bk34+srCyGDBnEtGlvsmLFCl5/fSr/+te/OP74EwGYN28ugwYN5KuvvmTp%0A0qU8/PCDfPnlF3TufDT169fnnXfe5o47bmXBggXMn/8TgwYNZIcddmKPPVquca5fw+EikqQSq8xP%0AYMzKyqJXrz7cddcQnnrqcQ48sDUnnHAyEydOKFH91q0PoVu3i+nfvy8LFy6kRYtduemmWwHYa699%0A6NHjMoYMuZ3+/a+mcePGXHRRD/bee99ij3f00cdxzz1/4403/o9Rox7jpJO6cuml3ahRoyYnnngy%0Affv2p2fPi+je/TzOPffCEl9no0abceihbRkw4Go6dz6Gyy9PVvc4/PDO3HrrX2jXrujeP4DTTjuL%0AAQP6ctRRHWjWbBsuv7wvb7wxlQceuJ/69Rtw6KHtaNq0GV26HEufPv3o2LHgCg+9evXm5ptvYMyY%0Ap9lzz99z1VX9uOGGAVx22cXcddf9Jb6GNm3aMX36+/Tp05Pq1Wtw5pl/4tNPZ60xZCS/008/m4UL%0AF9CjxwUsXbqUHXf8LbfeemdeL3C/ftczePDNnHTS0VSvXoM99/z9Op/gWJQ//3kgd9xxK0cd1ZGq%0AVauw446/ZeDAwXnjw0vrqKOO5d//Hs211/amYcNG9O9/Q9765t269eC22/7CypWrOPzwztxww810%0A734+J598PE89NW6tx91ll13p2fMK7rjjVm64oT9t27bnsMMOzxtrv7br+Pbbb+ja9Q8MH/6PIlcY%0Aueaa6xg6dDBnndWVlStX0rz5zgwZcjd16tQBoGfPi3j33bfzvslp2/ZAAAYPHsqee/6eW2+9g9tv%0Av5XjjjucBg0a0qXLH+nUqXOR13HVVdcyZMhgTj/9ZBYvXkTz5i248cZbee65MRx77BEcccSRa6zX%0A3a5dR+bNm8ctt9zE//43h8aNt+Lqq6/mkEOScdrdu/fkrruGcNFF57J48SJ22GEn7rzz73lj2G++%0AeTBDhgyiS5djycrKYo89WjJo0JD1buPiVMkdjL4xmTNnQYVcVP6F0LXhKO0yePXq1Wb+/MVlFE3p%0AVeakZ0Pm3+eN38bWxiNH3scnn3zMDTcUvT52ZbNs2bICwwdOOeV4jjvuRE466ZRUz7OxtbOKVlHt%0AnJOTXewnQ4eLSJK0gZs+/QMeffRhTj31jIoOpUTeffdtOnVqwwcfvMfKlSsZP34cX3/9Ffvuu+ba%0A3NKGyuEikiRtwHr1uphZsz6iW7ceNG++YXyztcceLbnggou47rprmDv3R7baqgn9+t3Adtttv+7K%0A0gbCJFuSpA3Y4MF/regQ1stJJ3XlpJNKv/yftKFwuIgkSZKUMpNsSZIkKWUm2ZIkSVLKTLIlSZKk%0AlJX7xMcQwm7AI0DdGON2ayl3HNAP+C3wLXB3jPHWcglSkiRJ+hXKtSc7hHAS8Bzw8TrK7UuSiN8I%0ANADOAgaEEE4o8yAlSZKkX6m8h4tkAwcAE9dRrhHwlxjjEzHGFTHGl4GXgYPLOkBJkiTp1yrX4SIx%0AxuEAIYR1lXuOpMebTPkqwNbA5LKMT5IkSUrDhvIwmj7AZsC9JSncsGEdqlXLKtuIipGTk10h59X6%0Aq7esdunr1Ct9nbLie67seG83frbxpsF23jRUtnau9El2COFa4BKgQ4zxx5LUmTt3UdkGVYycnGzm%0AzFlQIefW+ps/f3GpyterV7vUdcrSnBq+58qCf583frbxpsF23jRUVDuvLbGvtEl2ZojI3UA7oHWM%0AcWYFhyRJkiSVSKVNsoFBJJMkD4wxflfRwUiSJEklVWkeRhNCmBlCODTz+wHAOcDhJtiSJEna0JRr%0AT3YIIQLbAllAtRDCktxdmT91M6//lPn9k0IrkbwUY+xYTuFKkiRJ66W8l/Bb29p9VfKVO4ekJ1uS%0AJEna4FSa4SKSJEnSxsIkW5IkSUqZSbYkSZKUMpNsSZIkKWUm2ZIkSVLKTLIlSZKklJlkS5IkSSkz%0AyZYkSZJSZpItSZIkpcwkW5IkSUqZSbYkSZKUMpNsSZIkKWUm2ZIkSVLKTLIlSZKklJlkS5IkSSkz%0AyZYkSZJSZpItSZIkpcwkW5IkSUqZSbYkSZKUMpNsSZIkKWUm2ZIkSVLKTLIlSZKklJlkS5IkSSkz%0AyZYkSZJSZpItSZIkpcwkW5IkSUqZSbYkSZKUMpNsSZIkKWUm2ZIkSVLKTLIlSZKklJlkS5IkSSkz%0AyZYkSZJSZpItSZIkpcwkW5IkSUqZSbYkSZKUMpNsSZIkKWUm2ZIkSVLKTLIlSZKklJlkS5IkSSkz%0AyZYkSZJSZpItSZIkpcwkW5IkSUqZSbYkSZKUsmrlfcIQwm7AI0DdGON2ayl3AnANsCPwKTAgxvhU%0AuQQpSZIk/Qrl2pMdQjgJeA74eB3ldgf+AQwAcoBrgYdDCLuWdYySJEnSr1Xew0WygQOAiesodx4w%0AIcb4dIxxSYzx2UydP5V1gJIkSdKvVa5JdoxxeIxxdgmK7gVMK7RtGrBP+lFJkiRJ6Sr3MdkltBkw%0At9C2H4HNS1K5YcM6VKuWlXpQJZGTk10h59X6q7esdunr1Ct9nbLie67seG83frbxpsF23jRUtnau%0ArEl2UaoAq0tScO7cRWUcStFycrKZM2dBhZxb62/+/MWlKl+vXu1S1ylLc2r4nisL/n3e+NnGmwbb%0AedNQUe28tsS+si7hN4c1e60bZbZLkiRJlVplTbLfBPYutG1fYGoFxCJJkiSVSqUZLhJCmAlcEGOc%0AAtwNTAshHAeMA44GDgIuqrgIJUmSpJIp1yQ7hBCBbYEsoFoIYUnursyfugAxxukhhC4k62Q/AHwE%0AHB9j/KQ845UkSZLWR7km2THGsJbdVQqVfQZ4pmwjkiRJktJXWcdkS5IkSRssk2xJkiQpZZVm4qOk%0A9fP+D9NLXWe3zVuUQSSSJCmXPdmSJElSykyyJUmSpJSZZEuSJEkpM8mWJEmSUmaSLUmSJKXMJFuS%0AJElKmUm2JEmSlDKTbEmSJCllJtmSJElSykyyJUmSpJSZZEuSJEkpM8mWJEmSUmaSLUmSJKXMJFuS%0AJElKmUm2JEmSlDKTbEmSJCllJtmSJElSykyyJUmSpJSZZEuSJEkpM8mWJEmSUmaSLUmSJKXMJFuS%0AJElKmUm2JEmSlDKTbEmSJCllJtmSJElSykyyJUmSpJSZZEuSJEkpM8mWJEmSUmaSLUmSJKXMJFuS%0AJElKmUm2JEmSlDKTbEmSJCllJtmSJElSykyyJUmSpJSZZEuSJEkpM8mWJEmSUmaSLUmSJKXMJFuS%0AJElKmUm2JEmSlDKTbEmSJCll1cr7hCGEZsAw4EBgMfAM0DPGuLyIshcBPYCtgW+A+4G/xBhXl1/E%0AkiRJUulURE/2k8CPwE5Aa5Jk+/rChUIInYFbgDOBbOB4oBdwdnkFKkmSJK2Pck2yQwh7A78HLo8x%0Azosxfg7cBJwXQigcy77ABzHG12KMq2KM7wFTgT3LM2ZJkiSptMp7uMhewBcxxh/ybZsGNAR2BD7O%0At/3fQK8QQhvgP8AuJIn3kHKKVZIkSVov5Z1kbwbMLbTtx8zPzcmXZMcYp4YQegITSOJcDfSPMU5Y%0A10kaNqxDtWpZ6URcSjk52RVyXq2/estql75OvdLXqUx8n5aM92njZxtvGmznTUNla+dyn/hYhCqZ%0AnwUmM2Z6sG8GOpH0ZO8NPBlCiDHGx9Z2wLlzF5VFnOuUk5PNnDkLKuTcWn/z5y8uVfl69WqXuk5l%0AM6eG79N18e/zxs823jTYzpuGimrntSX25Z1kzyHpsc6vUb59+V0IPBNjnJh5/UoI4SGSiZBrTbIl%0ASZKkilTeq4u8CTQNIWyVb9u+wPfAp4XKZmX+5FcZet4lSZKktSrXJDvG+DbJCiE3hxDqhxB2AK4B%0AhsYYV4cQZoYQDs0UfxY4LoRwcAihWmZlki7AU+UZsyRJklRaFbFO9glAPWAWMBkYS7KMH0AA6gLE%0AGB8ArgXuAeYBDwODgPvKOV5JkiSpVMp9+EWM8Wvg2GL2VSn0+k7gzvKIS5IkSUpLRfRkS5IkSRs1%0Ak2xJkiQpZSbZkiRJUspMsiVJkqSUmWRLkiRJKTPJliRJklJmki1JkiSlrETrZIcQ7inFMVfHGM9f%0Az3gkSZKkDV5JH0ZzINAEaEDy9MWFmd/rZl7/lK/s6jQDlCRJkjY0JU2yLwN6A+fHGD/O3RhC2BMY%0AAtwQY5xQBvFJ0q929sBJpa4zetAxZRCJJGlTUdIk+1bg3PwJNkCM8Z0QwlXA3cCuaQcnSRXlqMue%0AKVX5+/u0LaNIJEkbopJOfPwtsKCYffOAHdMJR5IkSdrwlTTJngUMDCE0y78xhNAEuBH4LOW4JEmS%0ApA1WSYeLXAo8CXwWQpgLzAd+A2wGLANOKJvwJEmSpA1PiZLsGOMLIYQdgeOB5kA28DMQgadijN+U%0AXYiSJEnShqWkPdnEGOeQTHCUJEmStBYlTrJDCPsDvYA9gS2BlsB3QO8YY7+yCU+SJEna8JRo4mMI%0A4UjgZWB74BmgRmbXZsB5IYQ+ZROeJEmStOEp6eoifwYGxRj3iTFeAawAiDHOBroBZ5ZNeJIkSdKG%0Ap6TDRZoDXYrZ9xawTTrhSNKGqbRPlfThNZK0cStpT/a3wE7F7NuJZEk/SZIkSZS8J/sF4O4QwqXA%0ABGA1UCOEcAAwhGSctiRJkiRKnmRfTvJo9SdIEuwqwIeZfS8DV6QfmiQVrbRDMyRJKm8lfRjNfKBN%0ACGFfYD+gHvAT8HqM8fUyjE+SJEna4JQoyQ4hPAD0yiTUJtWSJEnSWpR04mN7YMeyDESSJEnaWJR0%0ATPZ5wPUhhPuBd4AFhQvEGL9OMzBJkiRpQ1XSJHt05mf7tZTJ+pWxSJIkSRuFYpPsEMKVwN8zkx4/%0AB24DFpZXYNL6ev+H6RUdgiRJ2sStrSd7AMn62NNInuj4WIxxTnkEJUmSJG3I1pZkvw+8HEL4jmRd%0A7DdDCCuLKbs6xujESEmSJIm1J9knkkx43Aw4H5gMLC6PoCRJkqQNWbFJdoxxNnANQAihOXBpjHFe%0AeQUmSZIkbahK+sTHNmUdiCRtSkr7aPj7+7Qto0gkSWWhpA+jkSRJklRCJV0nW9JGpLTLHO62eYsy%0AikSSpI2TPdmSJElSykyyJUmSpJSZZEuSJEkpM8mWJEmSUmaSLUmSJKXMJFuSJElKmUm2JEmSlLJy%0AXyc7hNAMGAYcCCwGngF6xhiXF1F2y0zZTsAS4BHgshjjsvKLWJIkSSqdingYzZPAh8BOQH3gKeB6%0AoE/+QiGEKpl97wNbA42AkcCRmWNI2kiU9hHjkiRVduWaZIcQ9gZ+DxweY5wHzAsh3ATcE0LoG2Nc%0Ala/4QUBzoF2McTEwDzi4POOVJEmS1kd592TvBXwRY/wh37ZpQENgR+DjfNsPIunF7hdCOBtYCgwH%0Ari+UjEuSJEmVSnkn2ZsBcwtt+zHzc3MKJtlbA/sAzwPbA/sCTwNfAfet7SQNG9ahWrWsNOIttZyc%0A7Ao5r35Rb1ntsj9HvbI/R2Xi+7ri2QZlw/u6abCdNw2VrZ0rYkx2YVUyP1cXsX1+jPGGzOspIYRR%0AwMmsI8meO3dRuhGWUE5ONnPmLKiQc+sX8+cvLtPj16tXu8zPUdnMqeH7uqL5b0v6/Dd702A7bxoq%0Aqp3XltiX9xJ+c0h6rPNrlG9fft/ySy93rs+AJumHJUmSJKWnvJPsN4GmIYSt8m3bF/ge+LRQ2WnA%0A9iGE+vm2bQ98XrYhSpIkSb9OuSbZMca3ganAzSGE+iGEHYBrgKExxtUhhJkhhEMzxceSjL++I4SQ%0AHUI4ADiNZPKjJEmSVGlVxBMfTwDqAbOAySTJ9E2ZfQGoCxBjXEmyJvYOJD3d/wKuiTE+Ud4BS5Ik%0ASaVR7hMfY4xfA8cWs69KodczgUPKIy5JkiQpLZVhdRFJ0jqU9qmY9/dpW0aRSJJKoiKGi0iSJEkb%0ANZNsSZIkKWUm2ZIkSVLKTLIlSZKklJlkS5IkSSkzyZYkSZJSZpItSZIkpcwkW5IkSUqZSbYkSZKU%0AMpNsSZIkKWUm2ZIkSVLKTLIlSZKklFWr6AAkbXzOHjipokOQJKlC2ZMtSZIkpcwkW5IkSUqZSbYk%0ASZKUMpNsSZIkKWUm2ZIkSVLKTLIlSZKklJlkS5IkSSkzyZYkSZJSZpItSZIkpcwkW5IkSUqZSbYk%0ASZKUMpNsSZIkKWUm2ZIkSVLKTLIlSZKklFWr6AAkVX7v/zC9okNQKZ09cFKp69zfp20ZRCJJmyZ7%0AsiVJkqSUmWRLkiRJKTPJliRJklJmki1JkiSlzCRbkiRJSplJtiRJkpQyk2xJkiQpZSbZkiRJUspM%0AsiVJkqSUmWRLkiRJKTPJliRJklJmki1JkiSlzCRbkiRJSplJtiRJkpSyauV9whBCM2AYcCCwGHgG%0A6BljXL6WOnWBGcDEGOOZ5RGnJEmStL4qoif7SeBHYCegNUmyff066lwHZJdxXJIkSVIqyjXJDiHs%0ADfweuDzGOC/G+DlwE3BeCKHIWEIIuwOnACPKL1JJkiRp/ZX3cJG9gC9ijD/k2zYNaAjsCHycv3AI%0A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">
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h5 id="Storing">Storing<a class="anchor-link" href="#Storing">¶</a>
+</h5>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><em>rrs</em> is a xarray DataArray type. To write the data it contains to netcdf format I first need to convert it to an xarray DataSet type, which then gives me the facility to export it to netcdf.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [14]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">dsUncNew</span> <span class="o">=</span> <span class="n">rrsUnc</span><span class="o">.</span><span class="n">to_dataset</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [15]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="nb">type</span><span class="p">(</span><span class="n">dsUncNew</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[15]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>xarray.core.dataset.Dataset</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [16]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">dsUncNew</span><span class="o">.</span><span class="n">to_netcdf</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">foutpath</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s1">'netcdf4'</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>That's it! In the next <a href="https://madhatter106.github.io/DataScienceCorner/posts/xarray-geoviews-a-new-perspective-on-oceanographic-data-part-ii/">post</a>, I will continue with some more data organization and shape the data for visualization using GeoViews. Happy hacking!</p>
+
+</div>
+</div>
+</div>
+    </div>
+  </div>
+
+    </div>
+    <aside class="postpromonav"><nav><ul itemprop="keywords" class="tags">
+<li><a class="tag p-category" href="../../categories/jupyter-notebook/" rel="tag">Jupyter notebook</a></li>
+            <li><a class="tag p-category" href="../../categories/ocean-color/" rel="tag">ocean color</a></li>
+            <li><a class="tag p-category" href="../../categories/xarray/" rel="tag">xarray</a></li>
+        </ul>
+<ul class="pager hidden-print">
+<li class="next">
+                <a href="../xarray-geoviews-a-new-perspective-on-oceanographic-data-part-ii/" rel="next" title="XARRAY &amp; GEOVIEWS A new perspective on oceanographic data - part II">Next post</a>
+            </li>
+        </ul></nav></aside><section class="comments hidden-print"><h2>Comments</h2>
+        
+        
+<script src="https://apis.google.com/js/plusone.js"></script><div class="g-comments" data-href="https://madhatter106.github.io/MarineDataScience/posts/xarray-geoviews-a-new-perspective-on-oceanographic-data-part-i/" data-first_party_property="BLOGGER" data-view_type="FILTERED_POSTMOD">
+</div>
+
+
+        </section><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML" integrity="sha256-SDRP1VVYu+tgAGKhddBSl5+ezofHKZeI+OzxakbIe/Y=" crossorigin="anonymous"></script><script type="text/x-mathjax-config">
+        MathJax.Hub.Config({tex2jax: {inlineMath: [['$latex ','$'], ['\\(','\\)']]}});
+        </script></article>
+</div>
+        <!--End of body content-->
+
+        <footer id="footer">
+            Contents © 2017         <a href="mailto:erdemk@protonmail.com">Erdem Karaköylü</a> - Powered by         <a href="https://getnikola.com" rel="nofollow">Nikola</a>         
+            
+        </footer>
+</div>
+</div>
+
+
+            <script src="../../assets/js/all-nocdn.js"></script><script>$('a.image-reference:not(.islink) img:not(.islink)').parent().colorbox({rel:"gal",maxWidth:"100%",maxHeight:"100%",scalePhotos:true});</script><!-- fancy dates --><script>
+    moment.locale("en");
+    fancydates(0, "YYYY-MM-DD HH:mm");
+    </script><!-- end fancy dates -->
+</body>
+</html>
