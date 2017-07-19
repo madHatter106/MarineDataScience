@@ -1,0 +1,4 @@
+Sitemap: https://madhatter106.github.io/MarineDataScience/sitemapindex.xml
+
+User-Agent: *
+Host: madhatter106.github.io
